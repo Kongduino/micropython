@@ -16,11 +16,22 @@
 #define MICROPY_ALLOC_PATH_MAX            (256)
 #define MICROPY_STACK_CHECK               (1)
 
+#define MICROPY_PY_BUILTINS_HELP          (1)
+#define MICROPY_PY_BUILTINS_HELP_MODULES  (1)
 #define MICROPY_PY_SYS_STDFILES           (1)
 #define MICROPY_PY_SYS_PLATFORM           "k210"
+#define MICROPY_EPOCH_IS_1970             (1)
 #define MICROPY_PY_TIME                   (1)
-#define MICROPY_PY_TIME_GMTIME_LOCALTIME_MKTIME (0)
-#define MICROPY_PY_TIME_TIME_TIME_NS      (0)
+#define MICROPY_PY_TIME_GMTIME_LOCALTIME_MKTIME (1)
+#define MICROPY_PY_TIME_TIME_TIME_NS      (1)
+#define MICROPY_PY_TIME_INCLUDEFILE       "ports/k210/modtime.c"
+
+#define MICROPY_PY_MACHINE                (1)
+#define MICROPY_PY_MACHINE_INCLUDEFILE    "ports/k210/modmachine.c"
+#define MICROPY_PY_MACHINE_RESET          (1)
+#define MICROPY_PY_MACHINE_BARE_METAL_FUNCS (1)
+#define MICROPY_PY_MACHINE_EXTRA_GLOBALS \
+    { MP_ROM_QSTR(MP_QSTR_RTC), MP_ROM_PTR(&machine_rtc_type) },
 
 // The file system: littlefs on the SPI flash, mounted by the frozen _boot.py
 #define MICROPY_VFS                       (1)

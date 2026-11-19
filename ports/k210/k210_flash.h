@@ -11,6 +11,7 @@
 
 bool k210_flash_init(void);
 uint32_t k210_flash_jedec_id(void);
+bool k210_flash_unique_id(uint8_t uid[8]);
 bool k210_flash_read(uint32_t addr, void *buf, size_t len);
 bool k210_flash_program(uint32_t addr, const void *buf, size_t len);
 bool k210_flash_erase_sector(uint32_t addr);

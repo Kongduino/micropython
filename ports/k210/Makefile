@@ -70,9 +70,11 @@ LIBS = -Wl,--start-group -lc -lm -lgcc -Wl,--end-group
 
 SRC_C = \
 	k210_flash.c \
+	machine_rtc.c \
 	main.c \
 	modk210.c \
 	mphalport.c \
+	shared/timeutils/timeutils.c \
 	shared/readline/readline.c \
 	shared/runtime/gchelper_native.c \
 	shared/runtime/interrupt_char.c \
@@ -84,6 +86,7 @@ SRC_S = \
 	shared/runtime/gchelper_rv64i.s \
 
 SRC_QSTR += \
+	machine_rtc.c \
 	main.c \
 	modk210.c \
 	shared/readline/readline.c \

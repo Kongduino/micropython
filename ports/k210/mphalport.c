@@ -104,10 +104,18 @@ mp_uint_t mp_hal_ticks_ms(void) {
     return read_csr(mcycle) / (cycles_per_us * 1000);
 }
 
-// No real-time clock is set yet: the time since start-up, which littlefs
-// records as the files' modification times
+// The K210's RTC loses its time at every reset, like a clock kept from the
+// cycle counter: the time of day is the counter plus an offset that
+// machine.RTC().datetime() sets (Thonny sets it on connecting). Until then it
+// counts from the epoch.
+static int64_t time_offset_us;
+
 uint64_t mp_hal_time_ns(void) {
-    return (uint64_t)mp_hal_ticks_us() * 1000;
+    return ((int64_t)mp_hal_ticks_us() + time_offset_us) * 1000;
+}
+
+void mp_hal_time_set(uint64_t seconds) {
+    time_offset_us = (int64_t)seconds * 1000000 - (int64_t)mp_hal_ticks_us();
 }
 
 void mp_hal_delay_us(mp_uint_t us) {

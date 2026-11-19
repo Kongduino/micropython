@@ -17,6 +17,7 @@
 #define CMD_PAGE_PROGRAM 0x02
 #define CMD_SECTOR_ERASE 0x20
 #define CMD_JEDEC_ID 0x9F
+#define CMD_UNIQUE_ID 0x4B
 #define STATUS_BUSY 0x01
 
 #define READ_CHUNK 256
@@ -102,6 +103,20 @@ uint32_t k210_flash_jedec_id(void) {
     uint8_t cmd = CMD_JEDEC_ID, id[3] = {0};
     receive(&cmd, 1, id, sizeof(id));
     return ((uint32_t)id[0] << 16) | ((uint32_t)id[1] << 8) | id[2];
+}
+
+bool k210_flash_unique_id(uint8_t uid[8]) {
+    if (!k210_flash_init()) {
+        return false;
+    }
+    uint8_t cmd[5] = {CMD_UNIQUE_ID, 0, 0, 0, 0}; // 4 dummy bytes
+    receive(cmd, sizeof(cmd), uid, 8);
+    bool all_ones = true, all_zeros = true;
+    for (int i = 0; i < 8; i++) {
+        all_ones &= uid[i] == 0xFF;
+        all_zeros &= uid[i] == 0x00;
+    }
+    return !all_ones && !all_zeros;
 }
 
 bool k210_flash_read(uint32_t addr, void *buf, size_t len) {

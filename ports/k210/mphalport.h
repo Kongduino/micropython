@@ -8,3 +8,6 @@ mp_uint_t mp_hal_ticks_us(void);
 mp_uint_t mp_hal_ticks_cpu(void);
 void mp_hal_delay_ms(mp_uint_t ms);
 void mp_hal_delay_us(mp_uint_t us);
+
+// The time of day, in seconds since the epoch (1970)
+void mp_hal_time_set(uint64_t seconds);
