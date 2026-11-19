@@ -17,6 +17,7 @@ QSTR_DEFS = qstrdefsport.h
 
 MICROPY_ROM_TEXT_COMPRESSION ?= 1
 MICROPY_VFS_LFS2 ?= 1
+MICROPY_VFS_FAT ?= 1
 
 FROZEN_MANIFEST ?= $(abspath manifest.py)
 
@@ -70,7 +71,11 @@ LIBS = -Wl,--start-group -lc -lm -lgcc -Wl,--end-group
 
 SRC_C = \
 	k210_flash.c \
+	drivers/bus/softspi.c \
+	machine_i2c.c \
+	machine_pin.c \
 	machine_rtc.c \
+	machine_spi.c \
 	main.c \
 	modk210.c \
 	mphalport.c \
@@ -86,7 +91,10 @@ SRC_S = \
 	shared/runtime/gchelper_rv64i.s \
 
 SRC_QSTR += \
+	machine_i2c.c \
+	machine_pin.c \
 	machine_rtc.c \
+	machine_spi.c \
 	main.c \
 	modk210.c \
 	shared/readline/readline.c \
@@ -106,6 +114,7 @@ SDK_SRC_C = $(addprefix lib/bsp/, \
 	dmac.c \
 	fpioa.c \
 	gpiohs.c \
+	i2c.c \
 	plic.c \
 	spi.c \
 	sysctl.c \

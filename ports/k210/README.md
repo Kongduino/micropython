@@ -7,12 +7,35 @@ on the bare Kendryte standalone SDK. So far:
   serial port;
 - a littlefs file system on the SPI flash, mounted at `/`, with `boot.py` and
   `main.py` run at start-up;
-- `os`, `time` (with `localtime` and `time`, epoch 1970), `help()`;
-- `machine`: `RTC`, `reset`, `freq`, `unique_id` (the flash chip's), `idle`,
-  `lightsleep`/`deepsleep` (a wait, and a wait then a reset, for now);
+- MicroPython's "extra features" level: `os`, `time` (epoch 1970), `select`,
+  `random`, `help()` and so on; FAT for SD cards (`vfs.VfsFat`);
+- `machine`: `Pin`, `I2C`, `SPI`, `UART`, `SoftI2C`, `SoftSPI`, `Signal`,
+  `RTC`, `mem8/16/32`, `reset`, `freq`, `unique_id` (the flash chip's),
+  `idle`, `lightsleep`/`deepsleep` (a wait, and a wait then a reset, for now);
 - `k210.Flash`, the file system's block device.
 
-No `machine.Pin`, `I2C`, `SPI` or `UART` yet.
+## Pins and buses
+
+Pins are the K210's IO numbers, 0 to 47 (`Pin(14)`, or `14` as an argument).
+The FPIOA routes any function to any pin, so every bus takes its pins as
+arguments:
+
+| Class | Hardware | Defaults |
+|---|---|---|
+| `Pin(n)` | one of the 32 high-speed GPIO channels, taken when the pin is first used | |
+| `I2C(0..2, scl=, sda=, freq=400000)` | the three I2C controllers | `I2C(0)`: the internal bus, scl=24, sda=27 (AXP173 0x34, MSA301 0x26, FT6X36 0x38, ES8374 0x10) |
+| `SPI(0..1, baudrate, sck=, mosi=, miso=)` | SPI0 and SPI1, master, mode 0-3, 8 bits, MSB first; chip select is a `Pin` | `SPI(1)`: the SD card slot, sck=11, mosi=10, miso=6 (CS is 26) |
+| `UART(1..3, baudrate, tx=, rx=)` | UART1 to UART3, interrupt-driven receive buffer (`rxbuf=`, 256 bytes by default) | |
+
+The SD card, with micropython-lib's `sdcard.py` in `/lib`:
+
+    import vfs, sdcard
+    from machine import SPI, Pin
+    vfs.mount(vfs.VfsFat(sdcard.SDCard(SPI(1), Pin(26), baudrate=20000000)), "/sd")
+
+Other pins of the board (from MaixPy's configuration): LEDs on 14, 15, 17
+(red, green, blue) and 32 (white), the BACK key on 31, NEXT on 20, ENTER on 23
+(also Grove port 3's SDA and SCL).
 
 ## Building
 
@@ -50,5 +73,17 @@ The REPL is on the same port at 115200 baud.
   `_boot.py` formats it if it holds no file system.
 - The time of day is kept from the CPU's cycle counter and lost at reset;
   `machine.RTC().datetime(...)` sets it (Thonny does on connecting).
+- I2C: the controller ends a transfer with a STOP when its transmit FIFO runs
+  empty and has no STOP or address-only command, so a transfer's bytes are
+  fed without a gap (a write then a read is one transfer, with a repeated
+  START), and a write of nothing (`scan`, `writeto(addr, b'')`) probes with a
+  1-byte read.
+- Pin interrupts: the GPIO fires on both edges whichever is enabled, so both
+  are, and the level read in the interrupt picks the edges asked for. Handlers
+  run through the scheduler (no `hard=True`).
+- At most 32 pins can be `Pin`s at once (the high-speed GPIO channels); a pin
+  given to a bus frees its channel.
+- micropython-lib's `sdcard.py` sleeps 1 ms whenever a card isn't ready with a
+  block, so reads run near 85 KB/s; the bus itself moves 2.5 MB/s at 20 MHz.
 - Floats are single precision, with the SDK's `lp64f` ABI.
 - The second core is idle, waiting in the SDK's start-up code.

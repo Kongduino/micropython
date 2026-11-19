@@ -1,6 +1,8 @@
 #include "py/mphal.h"
 #include "py/runtime.h"
 #include "py/stream.h"
+#include "shared/timeutils/timeutils.h"
+#include "lib/oofatfs/ff.h"
 
 #include "encoding.h"
 #include "fpioa.h"
@@ -130,4 +132,12 @@ void mp_hal_delay_ms(mp_uint_t ms) {
     while (mp_hal_ticks_ms() - start < ms) {
         mp_handle_pending(true);
     }
+}
+
+// FAT's timestamps, packed as FatFs wants them
+DWORD get_fattime(void) {
+    timeutils_struct_time_t tm;
+    timeutils_seconds_since_epoch_to_struct_time(mp_hal_time_ns() / 1000000000, &tm);
+    return ((tm.tm_year - 1980) << 25) | (tm.tm_mon << 21) | (tm.tm_mday << 16)
+           | (tm.tm_hour << 11) | (tm.tm_min << 5) | (tm.tm_sec / 2);
 }
