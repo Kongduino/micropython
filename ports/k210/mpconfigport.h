@@ -6,6 +6,7 @@
 
 #define MICROPY_ENABLE_COMPILER           (1)
 #define MICROPY_ENABLE_GC                 (1)
+#define MICROPY_ENABLE_FINALISER          (1)
 #define MICROPY_GCREGS_SETJMP             (0)
 #define MICROPY_HELPER_REPL               (1)
 #define MICROPY_REPL_AUTO_INDENT          (1)
@@ -20,6 +21,13 @@
 #define MICROPY_PY_TIME                   (1)
 #define MICROPY_PY_TIME_GMTIME_LOCALTIME_MKTIME (0)
 #define MICROPY_PY_TIME_TIME_TIME_NS      (0)
+
+// The file system: littlefs on the SPI flash, mounted by the frozen _boot.py
+#define MICROPY_VFS                       (1)
+#define MICROPY_READER_VFS                (1)
+#define MICROPY_PY_OS                     (1)
+#define MICROPY_PY_OS_UNAME               (1)
+#define MICROPY_PY_OS_SYNC                (1)
 
 // Type definitions for the specific machine
 

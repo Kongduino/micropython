@@ -16,6 +16,9 @@ KFLASH ?= $(HOME)/.platformio/packages/tool-kflash-kendryte210/kflash.py
 QSTR_DEFS = qstrdefsport.h
 
 MICROPY_ROM_TEXT_COMPRESSION ?= 1
+MICROPY_VFS_LFS2 ?= 1
+
+FROZEN_MANIFEST ?= $(abspath manifest.py)
 
 include $(TOP)/py/py.mk
 include $(TOP)/extmod/extmod.mk
@@ -66,7 +69,9 @@ LDFLAGS += -T $(K210_SDK)/lds/kendryte.ld -Wl,-Map=$(BUILD)/firmware.map
 LIBS = -Wl,--start-group -lc -lm -lgcc -Wl,--end-group
 
 SRC_C = \
+	k210_flash.c \
 	main.c \
+	modk210.c \
 	mphalport.c \
 	shared/readline/readline.c \
 	shared/runtime/gchelper_native.c \
@@ -79,6 +84,8 @@ SRC_S = \
 	shared/runtime/gchelper_rv64i.s \
 
 SRC_QSTR += \
+	main.c \
+	modk210.c \
 	shared/readline/readline.c \
 	shared/runtime/pyexec.c \
 	shared/runtime/sys_stdio_mphal.c \
@@ -97,6 +104,7 @@ SDK_SRC_C = $(addprefix lib/bsp/, \
 	fpioa.c \
 	gpiohs.c \
 	plic.c \
+	spi.c \
 	sysctl.c \
 	uart.c \
 	uarths.c \

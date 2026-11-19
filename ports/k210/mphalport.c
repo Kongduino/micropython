@@ -104,6 +104,12 @@ mp_uint_t mp_hal_ticks_ms(void) {
     return read_csr(mcycle) / (cycles_per_us * 1000);
 }
 
+// No real-time clock is set yet: the time since start-up, which littlefs
+// records as the files' modification times
+uint64_t mp_hal_time_ns(void) {
+    return (uint64_t)mp_hal_ticks_us() * 1000;
+}
+
 void mp_hal_delay_us(mp_uint_t us) {
     uint64_t start = read_csr(mcycle);
     uint64_t wait = (uint64_t)us * cycles_per_us;
