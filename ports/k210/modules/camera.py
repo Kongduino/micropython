@@ -8,6 +8,7 @@
 #   lcd.blit(cam.capture(), 40, 80)   # an RGB565 frame, onto the screen
 #   lcd.show()
 #   g = cam.grey()                     # a GS8 frame (the green channel)
+#   cam.qr()                           # the QR codes in view: [b'...', ...]
 
 import framebuf
 import k210
@@ -35,6 +36,14 @@ class Camera:
             self.grey_frame = framebuf.FrameBuffer(self.grey_buffer, self.width, self.height, framebuf.GS8)
         self.camera.grey(self.grey_buffer)
         return self.grey_frame
+
+    def qr(self, corners=False):
+        # The QR codes in the next frame (its green channel): a list of their
+        # payloads (bytes), or with corners=True of (payload, corners), the
+        # corners ((x, y) four times) in the frame
+        import qr
+        self.grey()
+        return qr.decode(self.grey_buffer, self.width, self.height, corners=corners)
 
     def reg(self, addr, value=None):
         # Reads (or, given a value, writes) one of the camera's registers

@@ -50,6 +50,12 @@ CFLAGS += -DMICROPY_SSL_AXTLS=1 -Iaxtls-include -I$(TOP)/lib/axtls/ssl -I$(TOP)/
 GIT_SUBMODULES += lib/axtls
 $(BUILD)/lib/axtls/%.o: CFLAGS += -Wno-all -Wno-unused-parameter -Wno-sign-compare
 
+# qr's decoder, quirc, in single precision (the FPU's), with its own code
+# style's warnings
+QUIRC_CFLAGS = -DQUIRC_FLOAT_TYPE=float -DQUIRC_USE_TGMATH
+CFLAGS += $(QUIRC_CFLAGS)
+$(BUILD)/quirc/%.o: CFLAGS += -Wno-all -Wno-sign-compare -Wno-double-promotion
+
 CFLAGS += $(INC) $(ARCH_FLAGS) -Wall -Werror -std=gnu11 -nostdlib $(COPT)
 CFLAGS += -fno-common -ffunction-sections -fdata-sections -fstrict-volatile-bitfields
 CFLAGS += -fsingle-precision-constant -Wdouble-promotion
@@ -90,7 +96,12 @@ SRC_C = \
 	machine_timer.c \
 	main.c \
 	modk210.c \
+	modqr.c \
 	mphalport.c \
+	quirc/decode.c \
+	quirc/identify.c \
+	quirc/quirc.c \
+	quirc/version_db.c \
 	shared/timeutils/timeutils.c \
 	lib/axtls/crypto/aes.c \
 	shared/readline/readline.c \
@@ -116,6 +127,7 @@ SRC_QSTR += \
 	machine_spi.c \
 	main.c \
 	modk210.c \
+	modqr.c \
 	shared/readline/readline.c \
 	shared/runtime/pyexec.c \
 	shared/runtime/sys_stdio_mphal.c \

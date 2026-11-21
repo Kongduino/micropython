@@ -24,6 +24,8 @@ on the bare Kendryte standalone SDK. So far:
   or greyscale (`grey()`), upright with the Amigo held upright: the rear one
   (OV7740), 240x320, or the front one (GC0328), 320x240, with
   `Camera(front=True)`;
+- QR codes: `qr.decode(buf, width, height)`, the codes in a greyscale
+  picture, and `Camera.qr()`, those the camera sees;
 - audio: `es8374.ES8374`, the codec (speaker and microphone), and `wav`,
   `wav.play(path)` and `wav.record(path, seconds)` (16-bit PCM WAV files);
 - the onboard chips: `axp173.AXP173` (battery, USB power, charging) and
@@ -228,5 +230,10 @@ The REPL is on the same port at 115200 baud.
   IO21 (SCK), IO18 (WS), IO34 (to it) and IO35 (from it), in
   `ES8374.TX_PINS` and `RX_PINS`. A voice close by records at a level of a
   few thousand.
+- `qr` is quirc (Daniel Beer's, ISC licence, commit f2e4271, in `quirc/`)
+  built with single precision floats (`QUIRC_FLOAT_TYPE=float`), in the
+  SDK's heap, kept between calls. It reads a code in a 240x240 picture in
+  about 100 ms, mirrored codes too; `corners=True` gives each code's
+  corners.
 - Floats are single precision, with the SDK's `lp64f` ABI.
 - The second core is idle, waiting in the SDK's start-up code.
