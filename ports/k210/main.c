@@ -17,6 +17,9 @@ static char heap[MICROPY_HEAP_SIZE];
 int main(void) {
     // 800 MHz PLL0: the CPU at 400 MHz, as Maixduino and MaixPy run it
     sysctl_pll_set_freq(SYSCTL_PLL0, 800000000UL);
+    // PLL1 (the KPU's) and PLL2 (I2S audio's), as Maixduino sets them
+    sysctl_pll_set_freq(SYSCTL_PLL1, 300000000UL);
+    sysctl_pll_set_freq(SYSCTL_PLL2, 45158400UL);
     // IO36-IO47 (the LCD's and the camera's pins) are powered at 1.8 V on the
     // Amigo, as Maixduino and MaixPy set them
     sysctl_set_power_mode(SYSCTL_POWER_BANK6, SYSCTL_POWER_V18);
@@ -61,6 +64,7 @@ soft_reset_exit:
     machine_uart_deinit_all();
     machine_timer_deinit_all();
     machine_pwm_deinit_all();
+    k210_camera_deinit();
     gc_sweep_all();
     mp_deinit();
     goto soft_reset;

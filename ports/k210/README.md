@@ -21,6 +21,8 @@ on the bare Kendryte standalone SDK. So far:
   keys);
 - the SD card: `k210.SDCard`, mounted at `/sd` at start-up when a card with a
   FAT file system is in the slot;
+- the rear camera (OV7740): `camera.Camera`, 320x240 frames as `framebuf`s,
+  RGB565 (`capture()`) or greyscale (`grey()`);
 - the onboard chips: `axp173.AXP173` (battery, USB power, charging) and
   `msa301.MSA301` (acceleration, and the screen rotation the Amigo is held in);
 - `k210.Flash`, the file system's block device, and `k210.LCD`, the panel.
@@ -165,5 +167,15 @@ The REPL is on the same port at 115200 baud.
   the pin as a GPIO (the timer can't hold its output for a whole period).
 - `WDT` time-outs are powers of two of the watchdog's clock, the one asked
   for rounded up; a watchdog can't be stopped once started.
+- The camera (`k210.Camera`) is the Meshtastic K210 port's driver: the
+  OV7740's registers over I2C2 (IO40/IO41; the DVP's own SCCB reaches only
+  the front GC0328), MaixPy's register settings, YUV in, and the DVP writing
+  each frame as RGB565 and as R, G, B planes (the G plane is `grey()`). The
+  DVP's data pads are SPI0's, so they're routed to SPI0 as the screen has
+  them. The camera is mounted upside down; the sensor's mirror and flip put
+  its colour filter pattern out of step (green comes out magenta), so the
+  frame is turned as it's copied out instead. About 26 frames a second,
+  16 with each blitted to the screen. `reg()` reads and writes the sensor's
+  registers.
 - Floats are single precision, with the SDK's `lp64f` ABI.
 - The second core is idle, waiting in the SDK's start-up code.
