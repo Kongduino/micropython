@@ -80,11 +80,13 @@ SRC_C = \
 	k210_flash.c \
 	k210_lcd.c \
 	k210_sdcard.c \
+	k210_sha256.c \
 	drivers/bus/softspi.c \
 	machine_i2c.c \
 	machine_pin.c \
 	machine_rtc.c \
 	machine_spi.c \
+	machine_timer.c \
 	main.c \
 	modk210.c \
 	mphalport.c \
@@ -101,6 +103,8 @@ SRC_S = \
 	shared/runtime/gchelper_rv64i.s \
 
 SRC_QSTR += \
+	machine_timer.c \
+	k210_sha256.c \
 	k210_aes.c \
 	k210_lcd.c \
 	k210_sdcard.c \
@@ -131,8 +135,11 @@ SDK_SRC_C = $(addprefix lib/bsp/, \
 	i2c.c \
 	iomem.c \
 	plic.c \
+	pwm.c \
+	sha256.c \
 	spi.c \
 	sysctl.c \
+	timer.c \
 	uart.c \
 	uarths.c \
 	utils.c \
@@ -143,6 +150,12 @@ SDK_SRC_S = lib/bsp/crt.S
 # iomem.c (the DMA driver's allocator) wants the lock type of older newlibs,
 # which the SDK's locks.c defines for itself
 $(BUILD)/sdk/lib/drivers/iomem.o: SDK_CFLAGS += -D_lock_t=long
+
+# The SDK's hash driver and MicroPython's software SHA-256 (in the port's
+# hashlib, k210_sha256.c) both define sha256_init/update/final: the SDK's are
+# renamed
+SHA256_RENAME = -Dsha256_init=k210_sha256_init -Dsha256_update=k210_sha256_update -Dsha256_final=k210_sha256_final
+$(BUILD)/sdk/lib/drivers/sha256.o: SDK_CFLAGS += $(SHA256_RENAME)
 
 OBJ += $(PY_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))

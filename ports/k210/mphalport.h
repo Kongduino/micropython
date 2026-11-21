@@ -47,3 +47,6 @@ extern const void *k210_spi_owner[2];
 // Full-duplex transfer on SPI0 or SPI1 as set up (src NULL: sends 0xFF;
 // dest NULL: drops what comes back)
 void k210_spi_transfer(int id, size_t len, const uint8_t *src, uint8_t *dest);
+// Stop the timers and free the PWM channels at a soft reset
+void machine_timer_deinit_all(void);
+void machine_pwm_deinit_all(void);

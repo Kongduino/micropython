@@ -59,6 +59,8 @@ soft_reset_exit:
     mp_printf(&mp_plat_print, "MPY: soft reboot\n");
     machine_pin_deinit();
     machine_uart_deinit_all();
+    machine_timer_deinit_all();
+    machine_pwm_deinit_all();
     gc_sweep_all();
     mp_deinit();
     goto soft_reset;

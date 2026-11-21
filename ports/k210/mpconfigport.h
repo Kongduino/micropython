@@ -32,6 +32,8 @@
 #define MICROPY_PY_CRYPTOLIB              (1)
 #define MICROPY_PY_CRYPTOLIB_CONSTS       (1)
 #define MICROPY_PY_CRYPTOLIB_CTR          (1)
+// hashlib is the port's (k210_sha256.c): sha256 on the chip's hash unit
+#define MICROPY_PY_HASHLIB                (0)
 
 #define MICROPY_PY_MACHINE                (1)
 #define MICROPY_PY_MACHINE_INCLUDEFILE    "ports/k210/modmachine.c"
@@ -47,9 +49,14 @@
 #define MICROPY_PY_MACHINE_UART           (1)
 #define MICROPY_PY_MACHINE_UART_INCLUDEFILE "ports/k210/machine_uart.c"
 #define MICROPY_PY_MACHINE_UART_SENDBREAK (1)
+#define MICROPY_PY_MACHINE_PWM            (1)
+#define MICROPY_PY_MACHINE_PWM_INCLUDEFILE "ports/k210/machine_pwm.c"
+#define MICROPY_PY_MACHINE_WDT            (1)
+#define MICROPY_PY_MACHINE_WDT_INCLUDEFILE "ports/k210/machine_wdt.c"
 #define MICROPY_PY_MACHINE_EXTRA_GLOBALS \
     { MP_ROM_QSTR(MP_QSTR_Pin), MP_ROM_PTR(&machine_pin_type) }, \
-    { MP_ROM_QSTR(MP_QSTR_RTC), MP_ROM_PTR(&machine_rtc_type) },
+    { MP_ROM_QSTR(MP_QSTR_RTC), MP_ROM_PTR(&machine_rtc_type) }, \
+    { MP_ROM_QSTR(MP_QSTR_Timer), MP_ROM_PTR(&machine_timer_type) },
 
 // The file system: littlefs on the SPI flash, mounted by the frozen _boot.py;
 // FAT for SD cards

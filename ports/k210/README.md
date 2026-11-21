@@ -9,9 +9,11 @@ on the bare Kendryte standalone SDK. So far:
   `main.py` run at start-up;
 - MicroPython's "extra features" level: `os`, `time` (epoch 1970), `select`,
   `random`, `help()` and so on; FAT for SD cards (`vfs.VfsFat`);
-- `machine`: `Pin`, `I2C`, `SPI`, `UART`, `SoftI2C`, `SoftSPI`, `Signal`,
-  `RTC`, `mem8/16/32`, `reset`, `freq`, `unique_id` (the flash chip's),
-  `idle`, `lightsleep`/`deepsleep` (a wait, and a wait then a reset, for now);
+- `machine`: `Pin`, `I2C`, `SPI`, `UART`, `PWM`, `Timer`, `WDT`, `SoftI2C`,
+  `SoftSPI`, `Signal`, `RTC`, `mem8/16/32`, `reset`, `freq`, `unique_id` (the
+  flash chip's), `idle`, `lightsleep`/`deepsleep` (a wait, and a wait then a
+  reset, for now);
+- `hashlib.sha256` on the K210's hash unit;
 - the screen: `lcd.LCD`, a 480x320 `framebuf` (RGB565) with `show()`, and
   the touch screen: `touch.Touch`;
 - `cryptolib`: AES in C (ECB, CBC, CTR), axTLS's implementation, and
@@ -35,6 +37,9 @@ arguments:
 | `I2C(0..2, scl=, sda=, freq=400000)` | the three I2C controllers | `I2C(0)`: the internal bus, scl=24, sda=27 (AXP173 0x34, MSA301 0x26, FT6X36 0x38, ES8374 0x10) |
 | `SPI(0..1, baudrate, sck=, mosi=, miso=)` | SPI0 and SPI1, master, mode 0-3, 8 bits, MSB first; chip select is a `Pin` | `SPI(1)`: the SD card slot, sck=11, mosi=10, miso=6 (CS is 26) |
 | `UART(1..3, baudrate, tx=, rx=)` | UART1 to UART3, interrupt-driven receive buffer (`rxbuf=`, 256 bytes by default) | |
+| `PWM(pin, freq=1000, duty_u16=32768)` | the 4 channels of TIMER2, given out as PWM objects are made; also `duty_ns`, `invert` | |
+| `Timer(0..7, mode=, period=/freq=, callback=)` | the channels of TIMER0 and TIMER1 at 1 MHz: 1 us to 71 min | |
+| `WDT(0..1, timeout=5000)` | the two watchdogs, resetting the chip at the first time-out | |
 
 The screen:
 
@@ -75,7 +80,9 @@ The SD card is mounted at `/sd` at start-up if one is in the slot. By hand
     vfs.mount(vfs.VfsFat(k210.SDCard()), "/sd")   # SPI1, pins 11/10/6, CS 26
 
 Other pins of the board (from Maixduino's Amigo variant): LEDs on 14, 15, 17
-(red, green, blue), the white flash LED on 32, the keys on 20 and 23 (also
+(red, green, blue; lit when their pin is low, so `PWM(pin, invert=True)`
+makes a higher duty brighter; blue's pin is pulled low, so it's lit until
+set high), the white flash LED on 32, the keys on 20 and 23 (also
 Grove port 3's SDA and SCL), the touch controller's interrupt on 33. MaixPy's
 configuration names a BACK key on 31, but on this board IO31 isn't one.
 
@@ -146,5 +153,17 @@ The REPL is on the same port at 115200 baud.
   10 times on 4 KB (9.9 MB/s). CBC's chaining across calls is the object's;
   a GCM object does one job (one nonce), needs at least one byte of data (the
   accelerator hangs on none) and compares tags in software, in constant time.
+- `hashlib.sha256` is the port's own: on the hash unit (25 MB/s on 64 KB,
+  6 times the software), which wants the length up front. Its count of
+  blocks starts at its largest and is set at `digest()`, which the unit
+  allows. One object at a time has the unit (until `digest()`, or until it's
+  freed); others meanwhile hash in software, as does a hash past the count's
+  4 MB, from the unit's intermediate state. Only `sha256`, as before.
+- `Timer` and `PWM` share the three timer units: TIMER0 and TIMER1 (8
+  channels) for `Timer`, TIMER2 (4) for `PWM`. Their callbacks, like pin
+  interrupts, run through the scheduler. PWM at a duty of 0 or 65535 drives
+  the pin as a GPIO (the timer can't hold its output for a whole period).
+- `WDT` time-outs are powers of two of the watchdog's clock, the one asked
+  for rounded up; a watchdog can't be stopped once started.
 - Floats are single precision, with the SDK's `lp64f` ABI.
 - The second core is idle, waiting in the SDK's start-up code.
