@@ -75,7 +75,17 @@ static uint32_t *frame_buffer(int i) {
     return (uint32_t *)((uintptr_t)fb_mem[i] - 0x40000000);
 }
 
+static void route_pins(void) {
+    machine_pin_set_function(LCD_PIN_CS, FUNC_SPI0_SS0 + LCD_SS);
+    machine_pin_set_function(LCD_PIN_WR, FUNC_SPI0_SCLK);
+    k210_spi_owner[LCD_SPI] = &k210_lcd_obj;
+}
+
 static void bus_config(bool data, uint8_t bits) {
+    if (k210_spi_owner[LCD_SPI] != &k210_lcd_obj) {
+        // machine.SPI(0) used the controller since
+        route_pins();
+    }
     gpiohs_set_pin(dcx_channel, data ? GPIO_PV_HIGH : GPIO_PV_LOW);
     spi_init(LCD_SPI, SPI_WORK_MODE_0, SPI_FF_OCTAL, bits, 0);
     if (data) {
@@ -170,8 +180,7 @@ static void lcd_send_frame(int i) {
 }
 
 static void lcd_init(void) {
-    machine_pin_set_function(LCD_PIN_CS, FUNC_SPI0_SS0 + LCD_SS);
-    machine_pin_set_function(LCD_PIN_WR, FUNC_SPI0_SCLK);
+    route_pins();
     // The data lines are the DVP's: SPI0 drives them in octal mode
     sysctl_set_spi0_dvp_data(1);
 

@@ -37,6 +37,24 @@ static const uint8_t spi_sck_function[2] = {FUNC_SPI0_SCLK, FUNC_SPI1_SCLK};
 static const uint8_t spi_mosi_function[2] = {FUNC_SPI0_D0, FUNC_SPI1_D0};
 static const uint8_t spi_miso_function[2] = {FUNC_SPI0_D1, FUNC_SPI1_D1};
 
+const void *k210_spi_owner[2];
+
+// Routes the pins and sets the controller up for this SPI
+static void machine_spi_apply(machine_spi_obj_t *self) {
+    machine_pin_set_function(self->sck, spi_sck_function[self->id]);
+    if (self->mosi != NO_PIN) {
+        machine_pin_set_function(self->mosi, spi_mosi_function[self->id]);
+    }
+    if (self->miso != NO_PIN) {
+        machine_pin_set_function(self->miso, spi_miso_function[self->id]);
+    }
+    spi_init(self->id, (self->polarity << 1) | self->phase, SPI_FF_STANDARD, self->bits, 0);
+    self->baudrate = spi_set_clk_rate(self->id, self->baudrate);
+    volatile spi_t *regs = spi[self->id];
+    regs->ctrlr0 = (regs->ctrlr0 & ~(3U << SPI_TMOD_OFFSET)) | (SPI_TMOD_TRANS_RECV << SPI_TMOD_OFFSET);
+    k210_spi_owner[self->id] = self;
+}
+
 static void machine_spi_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_spi_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "SPI(%u, baudrate=%u, polarity=%u, phase=%u, bits=%u, sck=%u, mosi=%u, miso=%u)",
@@ -90,17 +108,7 @@ static void machine_spi_init(mp_obj_base_t *self_in, size_t n_args, const mp_obj
         mp_raise_ValueError(MP_ERROR_TEXT("sck and mosi or miso pins needed"));
     }
 
-    machine_pin_set_function(self->sck, spi_sck_function[self->id]);
-    if (self->mosi != NO_PIN) {
-        machine_pin_set_function(self->mosi, spi_mosi_function[self->id]);
-    }
-    if (self->miso != NO_PIN) {
-        machine_pin_set_function(self->miso, spi_miso_function[self->id]);
-    }
-    spi_init(self->id, (self->polarity << 1) | self->phase, SPI_FF_STANDARD, self->bits, 0);
-    self->baudrate = spi_set_clk_rate(self->id, self->baudrate);
-    volatile spi_t *regs = spi[self->id];
-    regs->ctrlr0 = (regs->ctrlr0 & ~(3U << SPI_TMOD_OFFSET)) | (SPI_TMOD_TRANS_RECV << SPI_TMOD_OFFSET);
+    machine_spi_apply(self);
 }
 
 // SPI(id, baudrate=1000000, *, polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck, mosi, miso)
@@ -143,6 +151,10 @@ void k210_spi_transfer(int id, size_t len, const uint8_t *src, uint8_t *dest) {
 
 static void machine_spi_transfer(mp_obj_base_t *self_in, size_t len, const uint8_t *src, uint8_t *dest) {
     machine_spi_obj_t *self = (machine_spi_obj_t *)self_in;
+    if (k210_spi_owner[self->id] != self) {
+        // The SD card or the screen used the controller since
+        machine_spi_apply(self);
+    }
     k210_spi_transfer(self->id, len, src, dest);
 }
 

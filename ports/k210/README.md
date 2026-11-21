@@ -138,6 +138,10 @@ The REPL is on the same port at 115200 baud.
 - `cryptolib` takes only axTLS's `aes.c` (extmod.mk builds axTLS for the
   `ssl` module, which isn't here); `axtls-include/arpa/inet.h` gives it the
   byte-order functions a bare-metal toolchain lacks.
+- SPI0 and SPI1 are shared: `machine.SPI`, the SD card (SPI1) and the screen
+  (SPI0) each set the controller and its pins up again when another has used
+  it since, so an SPI(1) device on other pins (the SX1276 SP-MOD: sck=9,
+  mosi=7, miso=31, CS 12, RESET 19) works alongside the mounted SD card.
 - `k210.AES` runs about 2.5-3 times faster than `cryptolib` on 64 bytes and
   10 times on 4 KB (9.9 MB/s). CBC's chaining across calls is the object's;
   a GCM object does one job (one nonce), needs at least one byte of data (the

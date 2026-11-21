@@ -43,6 +43,7 @@ typedef struct _k210_sdcard_obj_t {
 extern const mp_obj_type_t k210_sdcard_type;
 
 static void sd_bus(k210_sdcard_obj_t *self, uint32_t baudrate) {
+    k210_spi_owner[SD_SPI] = self;
     machine_pin_set_function(self->sck, FUNC_SPI1_SCLK);
     machine_pin_set_function(self->mosi, FUNC_SPI1_D0);
     machine_pin_set_function(self->miso, FUNC_SPI1_D1);

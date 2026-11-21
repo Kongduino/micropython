@@ -39,6 +39,11 @@ void machine_pin_set_function(mp_hal_pin_obj_t pin, int function);
 void machine_pin_deinit(void);
 // Turns off the UARTs' interrupts at a soft reset
 void machine_uart_deinit_all(void);
+// Who set up SPI0 and SPI1 last: machine.SPI, the SD card and the screen
+// share them, each setting the controller and its pins up again when another
+// has used it since
+extern const void *k210_spi_owner[2];
+
 // Full-duplex transfer on SPI0 or SPI1 as set up (src NULL: sends 0xFF;
 // dest NULL: drops what comes back)
 void k210_spi_transfer(int id, size_t len, const uint8_t *src, uint8_t *dest);
