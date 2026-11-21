@@ -135,6 +135,7 @@ SDK_SRC_C = $(addprefix lib/bsp/, \
 	dvp.c \
 	fpioa.c \
 	gpiohs.c \
+	i2s.c \
 	i2c.c \
 	iomem.c \
 	plic.c \

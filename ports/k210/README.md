@@ -9,7 +9,7 @@ on the bare Kendryte standalone SDK. So far:
   `main.py` run at start-up;
 - MicroPython's "extra features" level: `os`, `time` (epoch 1970), `select`,
   `random`, `help()` and so on; FAT for SD cards (`vfs.VfsFat`);
-- `machine`: `Pin`, `I2C`, `SPI`, `UART`, `PWM`, `Timer`, `WDT`, `SoftI2C`,
+- `machine`: `Pin`, `I2C`, `SPI`, `UART`, `PWM`, `Timer`, `WDT`, `I2S`, `SoftI2C`,
   `SoftSPI`, `Signal`, `RTC`, `mem8/16/32`, `reset`, `reset_cause`, `freq`,
   `unique_id` (the flash chip's), `idle`, `lightsleep`, `deepsleep`;
 - `hashlib.sha256` on the K210's hash unit;
@@ -24,6 +24,8 @@ on the bare Kendryte standalone SDK. So far:
   or greyscale (`grey()`), upright with the Amigo held upright: the rear one
   (OV7740), 240x320, or the front one (GC0328), 320x240, with
   `Camera(front=True)`;
+- audio: `es8374.ES8374`, the codec (speaker and microphone), and `wav`,
+  `wav.play(path)` and `wav.record(path, seconds)` (16-bit PCM WAV files);
 - the onboard chips: `axp173.AXP173` (battery, USB power, charging) and
   `msa301.MSA301` (acceleration, and the screen rotation the Amigo is held in);
 - `k210.Flash`, the file system's block device, and `k210.LCD`, the panel.
@@ -207,5 +209,24 @@ The REPL is on the same port at 115200 baud.
   line (which kflash and mpremote use), both `PWRON_RESET` here, as on rp2.
 - `lcd.off()` puts the controller to sleep and holds it in reset, which
   turns the backlight off; `on()` sets it up again, blank until `show()`.
+- `machine.I2S`: the three I2S controllers as controller (SCK, WS and MCK
+  out), on any pins, TX on a controller's channel 2 and RX on channel 0 (as
+  MaixPy), blocking, non-blocking (`irq()`) and asyncio, with DMA into a
+  buffer in two halves and the shared ring buffer. The controller always
+  works in 32-bit samples, a 16-bit sample in the top half (set to 16 bits,
+  its transmitter sends a word's top half, which left the codec silent).
+  PLL2 is set for each rate so that MCK is 256 times it, as codecs want:
+  26 MHz * nf / no, the closest to 512 * rate * n, within 0.1% at the usual
+  rates; one rate for the three controllers. The I2S pins are set to the
+  weakest drive: at full drive, MCK and SCK disturbed the Amigo's internal
+  I2C bus (arbitration lost in one transfer in a few, and once a chip left
+  holding SDA). `machine.I2C` also clears a stuck bus after a failed
+  transfer (up to 9 clocks with SDA let go, then a STOP).
+- The ES8374's settings are those MaixPy's `es8374.py` makes (the codec as
+  target, 16 bits, MCK / 256): speaker and microphone (PGA +18 dB) on,
+  `volume()`, `mute()`, `mic_gain()`, `off()`. Its pins are IO13 (MCK),
+  IO21 (SCK), IO18 (WS), IO34 (to it) and IO35 (from it), in
+  `ES8374.TX_PINS` and `RX_PINS`. A voice close by records at a level of a
+  few thousand.
 - Floats are single precision, with the SDK's `lp64f` ABI.
 - The second core is idle, waiting in the SDK's start-up code.

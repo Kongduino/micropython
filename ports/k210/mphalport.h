@@ -50,6 +50,7 @@ void k210_spi_transfer(int id, size_t len, const uint8_t *src, uint8_t *dest);
 // Stop the timers and free the PWM channels at a soft reset
 void machine_timer_deinit_all(void);
 void machine_pwm_deinit_all(void);
+void machine_i2s_deinit_all(void);
 // Turns the camera off at a soft reset
 void k210_camera_deinit(void);
 

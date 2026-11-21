@@ -110,7 +110,7 @@ static bool is_read(size_t i, unsigned int flags) {
     return flags & MP_MACHINE_I2C_FLAG_READ;
 }
 
-static int machine_i2c_transfer(mp_obj_base_t *self_in, uint16_t addr, size_t n, mp_machine_i2c_buf_t *bufs, unsigned int flags) {
+static int machine_i2c_transfer_once(mp_obj_base_t *self_in, uint16_t addr, size_t n, mp_machine_i2c_buf_t *bufs, unsigned int flags) {
     machine_i2c_obj_t *self = (machine_i2c_obj_t *)self_in;
     volatile i2c_t *regs = i2c[self->id];
 
@@ -194,6 +194,37 @@ static int machine_i2c_transfer(mp_obj_base_t *self_in, uint16_t addr, size_t n,
         return abort_error(regs);
     }
     return total;
+}
+
+// Frees the bus after a failed transfer: a chip cut off in the middle of a
+// byte may hold SDA low (waiting for the clocks of the rest of it), which
+// stops every chip on the bus. Up to 9 clocks, with SDA let go, then a STOP,
+// as I2C's bus clear has it; the pins are then given back to the controller.
+static void machine_i2c_bus_clear(machine_i2c_obj_t *self) {
+    mp_hal_pin_open_drain(self->scl);
+    mp_hal_pin_open_drain(self->sda);
+    mp_hal_pin_od_high(self->scl);
+    mp_hal_pin_od_high(self->sda);
+    mp_hal_delay_us(5);
+    for (int i = 0; i < 9 && !mp_hal_pin_read(self->sda); i++) {
+        mp_hal_pin_od_low(self->scl);
+        mp_hal_delay_us(5);
+        mp_hal_pin_od_high(self->scl);
+        mp_hal_delay_us(5);
+    }
+    mp_hal_pin_od_low(self->sda);
+    mp_hal_delay_us(5);
+    mp_hal_pin_od_high(self->sda);
+    mp_hal_delay_us(5);
+    machine_i2c_init(self);
+}
+
+static int machine_i2c_transfer(mp_obj_base_t *self_in, uint16_t addr, size_t n, mp_machine_i2c_buf_t *bufs, unsigned int flags) {
+    int ret = machine_i2c_transfer_once(self_in, addr, n, bufs, flags);
+    if (ret < 0 && ret != -MP_ENODEV) {
+        machine_i2c_bus_clear((machine_i2c_obj_t *)self_in);
+    }
+    return ret;
 }
 
 static const mp_machine_i2c_p_t machine_i2c_p = {

@@ -65,6 +65,7 @@ soft_reset_exit:
     machine_uart_deinit_all();
     machine_timer_deinit_all();
     machine_pwm_deinit_all();
+    machine_i2s_deinit_all();
     k210_camera_deinit();
     gc_sweep_all();
     mp_deinit();
