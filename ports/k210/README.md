@@ -12,7 +12,8 @@ on the bare Kendryte standalone SDK. So far:
 - `machine`: `Pin`, `I2C`, `SPI`, `UART`, `SoftI2C`, `SoftSPI`, `Signal`,
   `RTC`, `mem8/16/32`, `reset`, `freq`, `unique_id` (the flash chip's),
   `idle`, `lightsleep`/`deepsleep` (a wait, and a wait then a reset, for now);
-- `k210.Flash`, the file system's block device.
+- the screen: `lcd.LCD`, a 480x320 `framebuf` (RGB565) with `show()`;
+- `k210.Flash`, the file system's block device, and `k210.LCD`, the panel.
 
 ## Pins and buses
 
@@ -26,6 +27,14 @@ arguments:
 | `I2C(0..2, scl=, sda=, freq=400000)` | the three I2C controllers | `I2C(0)`: the internal bus, scl=24, sda=27 (AXP173 0x34, MSA301 0x26, FT6X36 0x38, ES8374 0x10) |
 | `SPI(0..1, baudrate, sck=, mosi=, miso=)` | SPI0 and SPI1, master, mode 0-3, 8 bits, MSB first; chip select is a `Pin` | `SPI(1)`: the SD card slot, sck=11, mosi=10, miso=6 (CS is 26) |
 | `UART(1..3, baudrate, tx=, rx=)` | UART1 to UART3, interrupt-driven receive buffer (`rxbuf=`, 256 bytes by default) | |
+
+The screen:
+
+    from lcd import LCD
+    lcd = LCD()            # rotation 0-3, a quarter turn each; 0: landscape
+    lcd.fill(0)
+    lcd.text("Hello", 10, 10, LCD.color(255, 255, 0))
+    lcd.show()             # returns while the DMA sends the frame (about 20 ms)
 
 The SD card, with micropython-lib's `sdcard.py` in `/lib`:
 
@@ -66,8 +75,8 @@ The REPL is on the same port at 115200 baud.
   PLIC and puts the SDK console on UART3. `main()` then raises PLL0 to 800 MHz
   and moves IO4/IO5 to the high-speed UART, whose receive interrupt fills a
   4 KB buffer (the hardware FIFO holds 8 bytes).
-- The SDK's `iomem.c` doesn't build against current newlib (`_lock_t`), and
-  nothing here uses it, so it's left out.
+- The SDK's `iomem.c` (the DMA driver's allocator) wants the `_lock_t` of
+  older newlibs; it's built with the SDK's own definition (`long`).
 - The file system takes the 1 MB at 0xC00000, clear of Meshtastic's LittleFS
   (0x400000-0x5FFFFF) and MaixPy's SPIFFS (0xD00000-0xFFFFFF). The frozen
   `_boot.py` formats it if it holds no file system.
@@ -85,5 +94,11 @@ The REPL is on the same port at 115200 baud.
   given to a bus frees its channel.
 - micropython-lib's `sdcard.py` sleeps 1 ms whenever a card isn't ready with a
   block, so reads run near 85 KB/s; the bus itself moves 2.5 MB/s at 20 MHz.
+- The screen (ILI9481 on SPI0 in octal mode, IO36-IO39, the DVP's data
+  lines) is turned by the panel (MADCTL); `show()` copies the framebuf into
+  one of two uncached frame buffers, swapping each pair of pixels into the
+  order the bus sends them, and the DMA sends it. SPI0 and DMA channel 5 are
+  the screen's.
+- IO36-IO47 are set to 1.8 V at start-up, as Maixduino and MaixPy do.
 - Floats are single precision, with the SDK's `lp64f` ABI.
 - The second core is idle, waiting in the SDK's start-up code.

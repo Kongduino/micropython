@@ -71,6 +71,6 @@ typedef long mp_off_t;
 
 // The SDK gives each core a 32 KB stack (STKSHIFT in crt.S)
 #define MICROPY_HW_STACK_SIZE             (32 * 1024)
-#define MICROPY_HEAP_SIZE                 (2 * 1024 * 1024)
+#define MICROPY_HEAP_SIZE                 (3 * 1024 * 1024)
 
 #define MP_STATE_PORT MP_STATE_VM

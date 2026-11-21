@@ -1,4 +1,5 @@
-// The k210 module: k210.Flash, the file system's block device
+// The k210 module: k210.Flash, the file system's block device, and k210.LCD
+// (k210_lcd.c)
 
 #include "py/runtime.h"
 #include "py/mperrno.h"
@@ -107,9 +108,12 @@ static MP_DEFINE_CONST_OBJ_TYPE(
     locals_dict, &k210_flash_locals_dict
     );
 
+extern const mp_obj_type_t k210_lcd_type;
+
 static const mp_rom_map_elem_t k210_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_k210) },
     { MP_ROM_QSTR(MP_QSTR_Flash), MP_ROM_PTR(&k210_flash_type) },
+    { MP_ROM_QSTR(MP_QSTR_LCD), MP_ROM_PTR(&k210_lcd_type) },
 };
 static MP_DEFINE_CONST_DICT(k210_module_globals, k210_module_globals_table);
 

@@ -17,6 +17,10 @@ static char heap[MICROPY_HEAP_SIZE];
 int main(void) {
     // 800 MHz PLL0: the CPU at 400 MHz, as Maixduino and MaixPy run it
     sysctl_pll_set_freq(SYSCTL_PLL0, 800000000UL);
+    // IO36-IO47 (the LCD's and the camera's pins) are powered at 1.8 V on the
+    // Amigo, as Maixduino and MaixPy set them
+    sysctl_set_power_mode(SYSCTL_POWER_BANK6, SYSCTL_POWER_V18);
+    sysctl_set_power_mode(SYSCTL_POWER_BANK7, SYSCTL_POWER_V18);
     mp_hal_init();
 
 soft_reset:

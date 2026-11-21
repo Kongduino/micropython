@@ -30,6 +30,9 @@ void mp_hal_pin_od_high(mp_hal_pin_obj_t pin);
 int mp_hal_pin_read(mp_hal_pin_obj_t pin);
 void mp_hal_pin_write(mp_hal_pin_obj_t pin, int value);
 
+// The high-speed GPIO channel a pin is routed to, routing it to a free one
+// if it has none (for drivers that drive pins as GPIOs themselves)
+int machine_pin_gpio_channel(mp_hal_pin_obj_t pin);
 // Routes a pin to a peripheral's function, freeing any GPIO channel it held
 void machine_pin_set_function(mp_hal_pin_obj_t pin, int function);
 // Turns off the pins' interrupts at a soft reset

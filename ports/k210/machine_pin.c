@@ -72,6 +72,10 @@ static int pin_get_channel(uint32_t pin) {
     mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("no free GPIO channel"));
 }
 
+int machine_pin_gpio_channel(mp_hal_pin_obj_t pin) {
+    return pin_get_channel(pin);
+}
+
 void machine_pin_set_function(mp_hal_pin_obj_t pin, int function) {
     if (pin_channel[pin]) {
         int ch = pin_channel[pin] - 1;

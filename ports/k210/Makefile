@@ -71,6 +71,7 @@ LIBS = -Wl,--start-group -lc -lm -lgcc -Wl,--end-group
 
 SRC_C = \
 	k210_flash.c \
+	k210_lcd.c \
 	drivers/bus/softspi.c \
 	machine_i2c.c \
 	machine_pin.c \
@@ -91,6 +92,7 @@ SRC_S = \
 	shared/runtime/gchelper_rv64i.s \
 
 SRC_QSTR += \
+	k210_lcd.c \
 	machine_i2c.c \
 	machine_pin.c \
 	machine_rtc.c \
@@ -115,6 +117,7 @@ SDK_SRC_C = $(addprefix lib/bsp/, \
 	fpioa.c \
 	gpiohs.c \
 	i2c.c \
+	iomem.c \
 	plic.c \
 	spi.c \
 	sysctl.c \
@@ -124,6 +127,10 @@ SDK_SRC_C = $(addprefix lib/bsp/, \
 	)
 
 SDK_SRC_S = lib/bsp/crt.S
+
+# iomem.c (the DMA driver's allocator) wants the lock type of older newlibs,
+# which the SDK's locks.c defines for itself
+$(BUILD)/sdk/lib/drivers/iomem.o: SDK_CFLAGS += -D_lock_t=long
 
 OBJ += $(PY_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
