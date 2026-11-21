@@ -14,6 +14,8 @@ on the bare Kendryte standalone SDK. So far:
   `idle`, `lightsleep`/`deepsleep` (a wait, and a wait then a reset, for now);
 - the screen: `lcd.LCD`, a 480x320 `framebuf` (RGB565) with `show()`, and
   the touch screen: `touch.Touch`;
+- the onboard chips: `axp173.AXP173` (battery, USB power, charging) and
+  `msa301.MSA301` (acceleration, and the screen rotation the Amigo is held in);
 - `k210.Flash`, the file system's block device, and `k210.LCD`, the panel.
 
 ## Pins and buses
@@ -42,6 +44,17 @@ The touch screen (FT6X36 on `I2C(0)`), in the screen's coordinates:
     from touch import Touch
     touch = Touch()        # the same rotation as the LCD's
     touch.read()           # (x, y), or None when nothing touches
+
+The power chip and the accelerometer:
+
+    from axp173 import AXP173
+    pmu = AXP173()
+    pmu.battery_voltage(), pmu.battery_level(), pmu.charging(), pmu.usb_voltage()
+
+    from msa301 import MSA301
+    acc = MSA301()
+    acc.acceleration()     # (x, y, z) in g
+    lcd = LCD(acc.rotation() or 0)   # None when lying flat
 
 The SD card, with micropython-lib's `sdcard.py` in `/lib`:
 
