@@ -97,10 +97,16 @@ It needs:
 - a current RISC-V GCC: the xPack `riscv-none-elf-gcc` (15.2 tested), whose
   `rv64imafc/lp64f` multilib matches the SDK's flags;
 - the Kendryte standalone SDK, by default next to this repository
-  (`../kendryte-standalone-sdk`, or set `K210_SDK`).
+  (`../kendryte-standalone-sdk`, or set `K210_SDK`); its last commit,
+  02576ba, is the one tested:
+
+    $ git clone https://github.com/kendryte/kendryte-standalone-sdk.git
+
+Then, in this repository:
 
     $ make -C mpy-cross
     $ cd ports/k210
+    $ make submodules
     $ make
 
 ## Flashing
