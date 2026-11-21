@@ -12,4 +12,10 @@ except:
     fs = vfs.VfsLfs2(bdev, progsize=256)
 vfs.mount(fs, "/")
 
+# An SD card, if there's one in the slot with a FAT file system, at /sd
+try:
+    vfs.mount(vfs.VfsFat(k210.SDCard()), "/sd")
+except OSError:
+    pass
+
 del vfs, k210, bdev, fs

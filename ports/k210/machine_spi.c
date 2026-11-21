@@ -117,9 +117,8 @@ static mp_obj_t machine_spi_make_new(const mp_obj_type_t *type, size_t n_args, s
     return MP_OBJ_FROM_PTR(self);
 }
 
-static void machine_spi_transfer(mp_obj_base_t *self_in, size_t len, const uint8_t *src, uint8_t *dest) {
-    machine_spi_obj_t *self = (machine_spi_obj_t *)self_in;
-    volatile spi_t *regs = spi[self->id];
+void k210_spi_transfer(int id, size_t len, const uint8_t *src, uint8_t *dest) {
+    volatile spi_t *regs = spi[id];
 
     regs->ssienr = 1;
     regs->ser = 1;
@@ -140,6 +139,11 @@ static void machine_spi_transfer(mp_obj_base_t *self_in, size_t len, const uint8
     }
     regs->ser = 0;
     regs->ssienr = 0;
+}
+
+static void machine_spi_transfer(mp_obj_base_t *self_in, size_t len, const uint8_t *src, uint8_t *dest) {
+    machine_spi_obj_t *self = (machine_spi_obj_t *)self_in;
+    k210_spi_transfer(self->id, len, src, dest);
 }
 
 static const mp_machine_spi_p_t machine_spi_p = {

@@ -14,6 +14,8 @@ on the bare Kendryte standalone SDK. So far:
   `idle`, `lightsleep`/`deepsleep` (a wait, and a wait then a reset, for now);
 - the screen: `lcd.LCD`, a 480x320 `framebuf` (RGB565) with `show()`, and
   the touch screen: `touch.Touch`;
+- the SD card: `k210.SDCard`, mounted at `/sd` at start-up when a card with a
+  FAT file system is in the slot;
 - the onboard chips: `axp173.AXP173` (battery, USB power, charging) and
   `msa301.MSA301` (acceleration, and the screen rotation the Amigo is held in);
 - `k210.Flash`, the file system's block device, and `k210.LCD`, the panel.
@@ -56,11 +58,11 @@ The power chip and the accelerometer:
     acc.acceleration()     # (x, y, z) in g
     lcd = LCD(acc.rotation() or 0)   # None when lying flat
 
-The SD card, with micropython-lib's `sdcard.py` in `/lib`:
+The SD card is mounted at `/sd` at start-up if one is in the slot. By hand
+(after changing cards, say):
 
-    import vfs, sdcard
-    from machine import SPI, Pin
-    vfs.mount(vfs.VfsFat(sdcard.SDCard(SPI(1), Pin(26), baudrate=20000000)), "/sd")
+    import vfs, k210
+    vfs.mount(vfs.VfsFat(k210.SDCard()), "/sd")   # SPI1, pins 11/10/6, CS 26
 
 Other pins of the board (from Maixduino's Amigo variant): LEDs on 14, 15, 17
 (red, green, blue), the white flash LED on 32, the keys on 20 and 23 (also
@@ -113,8 +115,10 @@ The REPL is on the same port at 115200 baud.
   run through the scheduler (no `hard=True`).
 - At most 32 pins can be `Pin`s at once (the high-speed GPIO channels); a pin
   given to a bus frees its channel.
-- micropython-lib's `sdcard.py` sleeps 1 ms whenever a card isn't ready with a
-  block, so reads run near 85 KB/s; the bus itself moves 2.5 MB/s at 20 MHz.
+- `k210.SDCard` speaks the same SPI protocol as micropython-lib's `sdcard.py`,
+  but polls the card in a tight loop where `sdcard.py` sleeps 1 ms: about
+  2.2 MB/s reading and 1.7 MB/s writing at 25 MHz, against 85 KB/s reading
+  with `sdcard.py`. It takes SPI1 for itself.
 - The screen (ILI9481 on SPI0 in octal mode, IO36-IO39, the DVP's data
   lines) is turned by the panel (MADCTL); `show()` copies the framebuf into
   one of two uncached frame buffers, swapping each pair of pixels into the

@@ -72,6 +72,7 @@ LIBS = -Wl,--start-group -lc -lm -lgcc -Wl,--end-group
 SRC_C = \
 	k210_flash.c \
 	k210_lcd.c \
+	k210_sdcard.c \
 	drivers/bus/softspi.c \
 	machine_i2c.c \
 	machine_pin.c \
@@ -93,6 +94,7 @@ SRC_S = \
 
 SRC_QSTR += \
 	k210_lcd.c \
+	k210_sdcard.c \
 	machine_i2c.c \
 	machine_pin.c \
 	machine_rtc.c \
