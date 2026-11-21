@@ -266,17 +266,31 @@ static mp_obj_t k210_lcd_show(mp_obj_t self_in, mp_obj_t buf_in) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(k210_lcd_show_obj, k210_lcd_show);
 
+// on(): the screen back on after off(), blank until the next show()
 static mp_obj_t k210_lcd_on(mp_obj_t self_in) {
-    write_command(CMD_SLEEP_OFF, NULL, 0);
-    mp_hal_delay_ms(5); // the controller takes 5 ms to leave sleep
-    write_command(CMD_DISPLAY_ON, NULL, 0);
+    if (!lcd_ready) {
+        lcd_init();
+    }
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(k210_lcd_on_obj, k210_lcd_on);
 
+// The screen off: the controller asleep, then held in reset, which turns the
+// backlight off too (60 mA, half of what the Amigo draws asleep)
+void k210_lcd_power_off(void) {
+    if (lcd_ready) {
+        lcd_wait_frame();
+        write_command(CMD_DISPLAY_OFF, NULL, 0);
+        write_command(CMD_SLEEP_IN, NULL, 0);
+        lcd_ready = false;
+    }
+    mp_hal_pin_output(LCD_PIN_RST);
+    mp_hal_pin_write(LCD_PIN_RST, 0);
+}
+
+// off(): the screen and its backlight off, until on()
 static mp_obj_t k210_lcd_off(mp_obj_t self_in) {
-    write_command(CMD_DISPLAY_OFF, NULL, 0);
-    write_command(CMD_SLEEP_IN, NULL, 0);
+    k210_lcd_power_off();
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(k210_lcd_off_obj, k210_lcd_off);

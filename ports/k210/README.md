@@ -10,12 +10,11 @@ on the bare Kendryte standalone SDK. So far:
 - MicroPython's "extra features" level: `os`, `time` (epoch 1970), `select`,
   `random`, `help()` and so on; FAT for SD cards (`vfs.VfsFat`);
 - `machine`: `Pin`, `I2C`, `SPI`, `UART`, `PWM`, `Timer`, `WDT`, `SoftI2C`,
-  `SoftSPI`, `Signal`, `RTC`, `mem8/16/32`, `reset`, `freq`, `unique_id` (the
-  flash chip's), `idle`, `lightsleep`/`deepsleep` (a wait, and a wait then a
-  reset, for now);
+  `SoftSPI`, `Signal`, `RTC`, `mem8/16/32`, `reset`, `reset_cause`, `freq`,
+  `unique_id` (the flash chip's), `idle`, `lightsleep`, `deepsleep`;
 - `hashlib.sha256` on the K210's hash unit;
 - the screen: `lcd.LCD`, a 480x320 `framebuf` (RGB565) with `show()`, and
-  the touch screen: `touch.Touch`;
+  `off()`/`on()` (the backlight too), and the touch screen: `touch.Touch`;
 - `cryptolib`: AES in C (ECB, CBC, CTR), axTLS's implementation, and
   `k210.AES`, the K210's AES accelerator (ECB, CBC, GCM; 128, 192, 256-bit
   keys);
@@ -187,5 +186,26 @@ The REPL is on the same port at 115200 baud.
   filter pattern out of step: green came out magenta), the front one's
   flipped top to bottom. Rear about 26 frames a second, front 15. `reg()`
   reads and writes the running sensor's registers.
+- `lightsleep([ms])` runs the CPU (and the buses, from its clock) on the
+  26 MHz oscillator with PLL0 powered down, until the time is up or an
+  interrupt comes (a pin, a `Timer`, the REPL's UART: Ctrl-C works asleep);
+  `ticks_ms()` and the time of day carry on, counted by the CLINT's timer.
+  PLL1 (which also clocks the top 2 MB of RAM) and PLL2 run on. UARTs, I2C
+  and SPI run slower while asleep, as does PWM. The high-speed UART's bit
+  time measures about 10 clock cycles longer than its divider gives, which
+  only shows at 26 MHz (4%), so its divider is set with them taken off.
+  Measured at the USB input: about 112 mA awake and 60 mA asleep with the
+  screen off; the backlight adds about 60 mA.
+- `deepsleep(ms)` turns off the screen and the camera, sleeps as
+  `lightsleep()` but through interrupts, then resets; `reset_cause()` then
+  gives `DEEPSLEEP_RESET`, told from `machine.reset()` by a mark left in one
+  of the AXP173's data registers. `deepsleep()` with no time has the AXP173
+  turn the Amigo off (even on USB power, the USB serial chip too); the power
+  button turns it on. `reset_cause()` gives `PWRON_RESET`, `SOFT_RESET`
+  (`machine.reset()`), `WDT_RESET` or `DEEPSLEEP_RESET`: the SDK's start-up
+  code keeps the reset status but doesn't tell a power-on from the reset
+  line (which kflash and mpremote use), both `PWRON_RESET` here, as on rp2.
+- `lcd.off()` puts the controller to sleep and holds it in reset, which
+  turns the backlight off; `on()` sets it up again, blank until `show()`.
 - Floats are single precision, with the SDK's `lp64f` ABI.
 - The second core is idle, waiting in the SDK's start-up code.

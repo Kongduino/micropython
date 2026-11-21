@@ -52,3 +52,14 @@ void machine_timer_deinit_all(void);
 void machine_pwm_deinit_all(void);
 // Turns the camera off at a soft reset
 void k210_camera_deinit(void);
+
+// A register of a chip on the internal I2C bus (the power chip's)
+int k210_i2c0_read_reg(uint8_t addr, uint8_t reg);
+bool k210_i2c0_write_reg(uint8_t addr, uint8_t reg, uint8_t value);
+// The screen off, held in reset (its backlight off too)
+void k210_lcd_power_off(void);
+// Reads why the chip started, at start-up (machine.reset_cause)
+void k210_reset_cause_init(void);
+// Sleeps with the CPU on the oscillator and PLL0 off (machine.lightsleep)
+#define K210_SLEEP_FOREVER (UINT64_MAX)
+bool k210_lightsleep(uint64_t ms, bool wake_on_irq);

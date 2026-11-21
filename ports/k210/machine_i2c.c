@@ -203,6 +203,26 @@ static const mp_machine_i2c_p_t machine_i2c_p = {
     .transfer = machine_i2c_transfer,
 };
 
+// One register of a chip on the internal bus (I2C 0), for the port's own use
+// (the power chip, at deep sleep and start-up): the value, or -1
+int k210_i2c0_read_reg(uint8_t addr, uint8_t reg) {
+    machine_i2c_obj_t *self = &machine_i2c_obj[0];
+    machine_i2c_init(self);
+    uint8_t value;
+    mp_machine_i2c_buf_t bufs[2] = {{.len = 1, .buf = &reg}, {.len = 1, .buf = &value}};
+    int ret = machine_i2c_transfer(&self->base, addr, 2, bufs,
+        MP_MACHINE_I2C_FLAG_WRITE1 | MP_MACHINE_I2C_FLAG_READ | MP_MACHINE_I2C_FLAG_STOP);
+    return ret < 0 ? -1 : value;
+}
+
+bool k210_i2c0_write_reg(uint8_t addr, uint8_t reg, uint8_t value) {
+    machine_i2c_obj_t *self = &machine_i2c_obj[0];
+    machine_i2c_init(self);
+    uint8_t data[2] = {reg, value};
+    mp_machine_i2c_buf_t buf = {.len = 2, .buf = data};
+    return machine_i2c_transfer(&self->base, addr, 1, &buf, MP_MACHINE_I2C_FLAG_STOP) >= 0;
+}
+
 MP_DEFINE_CONST_OBJ_TYPE(
     machine_i2c_type,
     MP_QSTR_I2C,

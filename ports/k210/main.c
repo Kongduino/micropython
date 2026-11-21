@@ -25,6 +25,7 @@ int main(void) {
     sysctl_set_power_mode(SYSCTL_POWER_BANK6, SYSCTL_POWER_V18);
     sysctl_set_power_mode(SYSCTL_POWER_BANK7, SYSCTL_POWER_V18);
     mp_hal_init();
+    k210_reset_cause_init();
 
 soft_reset:
     mp_stack_ctrl_init();

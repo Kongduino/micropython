@@ -4,6 +4,7 @@
 #include "shared/timeutils/timeutils.h"
 #include "lib/oofatfs/ff.h"
 
+#include "clint.h"
 #include "encoding.h"
 #include "fpioa.h"
 #include "plic.h"
@@ -132,6 +133,74 @@ void mp_hal_delay_ms(mp_uint_t ms) {
     while (mp_hal_ticks_ms() - start < ms) {
         mp_handle_pending(true);
     }
+}
+
+// Light sleep: the CPU (and the buses, which run from its clock) on the
+// 26 MHz oscillator, PLL0 powered down, waiting for an interrupt. PLL1 (the
+// KPU's, which also clocks the top 2 MB of RAM) and PLL2 run on. The
+// high-speed UART's divider is set for each clock, so the REPL (Ctrl-C) works
+// asleep too. The cycle counter, which keeps the time, is moved on by the
+// time asleep, counted by the CLINT's timer (the CPU clock / 50).
+//
+// ms is the longest sleep (K210_SLEEP_FOREVER: no limit); an external
+// interrupt (a pin, a Timer, the UART...) ends it early if wake_on_irq,
+// else only the time does. Returns whether it ended early.
+//
+// The UART's bit time measures about 10 clock cycles longer than its
+// divider gives (found at the oscillator: it receives without error from 209
+// to 221, where freq / 115200 - 1 is 224), nothing at 400 MHz but 4% at
+// 26 MHz, so the divider is set with that taken off.
+static void uarths_set_div(void) {
+    uarths->div.div = sysctl_clock_get_freq(SYSCTL_CLOCK_CPU) / 115200 - 11;
+}
+
+bool k210_lightsleep(uint64_t ms, bool wake_on_irq) {
+    // Let the UART send what it has at the old rate (its FIFO holds 8 bytes)
+    mp_hal_delay_us(1000);
+    uint64_t cycles = read_csr(mcycle);
+    clear_csr(mstatus, MSTATUS_MIE);
+    uintptr_t mie = read_csr(mie);
+
+    sysctl_clock_set_clock_select(SYSCTL_CLOCK_SELECT_ACLK, SYSCTL_SOURCE_IN0);
+    sysctl->pll0.pll_out_en0 = 0;
+    sysctl->pll0.pll_pwrd0 = 0;
+    uarths_set_div();
+
+    uint64_t rate = sysctl_clock_get_freq(SYSCTL_CLOCK_CPU) / CLINT_CLOCK_DIV;
+    uint64_t start = clint->mtime;
+    uint64_t end = ms == K210_SLEEP_FOREVER ? UINT64_MAX : start + ms * rate / 1000;
+    clint->mtimecmp[0] = end;
+    write_csr(mie, (wake_on_irq ? (mie & MIP_MEIP) : 0) | MIP_MTIP);
+    bool early = false;
+    while (clint->mtime < end) {
+        if (read_csr(mip) & MIP_MEIP & read_csr(mie)) {
+            early = true;
+            break;
+        }
+        asm volatile ("wfi");
+    }
+    clint->mtimecmp[0] = UINT64_MAX;
+
+    write_csr(mie, mie);
+
+    // PLL0 back on, as sysctl_pll_set_freq() starts it, at the frequency it
+    // was set to
+    sysctl->pll0.pll_pwrd0 = 1;
+    mp_hal_delay_us(1);
+    sysctl->pll0.pll_reset0 = 0;
+    sysctl->pll0.pll_reset0 = 1;
+    mp_hal_delay_us(1);
+    sysctl->pll0.pll_reset0 = 0;
+    while (sysctl->pll_lock.pll_lock0 != 3) {
+        sysctl->pll_lock.pll_slip_clear0 = 1;
+    }
+    sysctl->pll0.pll_out_en0 = 1;
+    uint64_t asleep = clint->mtime - start;
+    sysctl_clock_set_clock_select(SYSCTL_CLOCK_SELECT_ACLK, SYSCTL_SOURCE_PLL0);
+    uarths_set_div();
+    write_csr(mcycle, cycles + asleep * 1000000 / rate * cycles_per_us);
+    set_csr(mstatus, MSTATUS_MIE);
+    return early;
 }
 
 // FAT's timestamps, packed as FatFs wants them
