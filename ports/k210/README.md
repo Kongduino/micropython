@@ -14,7 +14,9 @@ on the bare Kendryte standalone SDK. So far:
   `idle`, `lightsleep`/`deepsleep` (a wait, and a wait then a reset, for now);
 - the screen: `lcd.LCD`, a 480x320 `framebuf` (RGB565) with `show()`, and
   the touch screen: `touch.Touch`;
-- `cryptolib`: AES in C (ECB, CBC, CTR), axTLS's implementation;
+- `cryptolib`: AES in C (ECB, CBC, CTR), axTLS's implementation, and
+  `k210.AES`, the K210's AES accelerator (ECB, CBC, GCM; 128, 192, 256-bit
+  keys);
 - the SD card: `k210.SDCard`, mounted at `/sd` at start-up when a card with a
   FAT file system is in the slot;
 - the onboard chips: `axp173.AXP173` (battery, USB power, charging) and
@@ -58,6 +60,13 @@ The power chip and the accelerometer:
     acc = MSA301()
     acc.acceleration()     # (x, y, z) in g
     lcd = LCD(acc.rotation() or 0)   # None when lying flat
+
+AES on the accelerator, ECB and CBC as `cryptolib.aes`, GCM as PyCryptodome:
+
+    from k210 import AES
+    ct = AES(key, AES.MODE_CBC, iv).encrypt(data)       # multiples of 16 bytes
+    ct, tag = AES(key, AES.MODE_GCM, nonce).encrypt_and_digest(data, aad)
+    data = AES(key, AES.MODE_GCM, nonce).decrypt_and_verify(ct, tag, aad)
 
 The SD card is mounted at `/sd` at start-up if one is in the slot. By hand
 (after changing cards, say):
@@ -129,5 +138,9 @@ The REPL is on the same port at 115200 baud.
 - `cryptolib` takes only axTLS's `aes.c` (extmod.mk builds axTLS for the
   `ssl` module, which isn't here); `axtls-include/arpa/inet.h` gives it the
   byte-order functions a bare-metal toolchain lacks.
+- `k210.AES` runs about 2.5-3 times faster than `cryptolib` on 64 bytes and
+  10 times on 4 KB (9.9 MB/s). CBC's chaining across calls is the object's;
+  a GCM object does one job (one nonce), needs at least one byte of data (the
+  accelerator hangs on none) and compares tags in software, in constant time.
 - Floats are single precision, with the SDK's `lp64f` ABI.
 - The second core is idle, waiting in the SDK's start-up code.

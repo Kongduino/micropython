@@ -76,6 +76,7 @@ LDFLAGS += -T $(K210_SDK)/lds/kendryte.ld -Wl,-Map=$(BUILD)/firmware.map
 LIBS = -Wl,--start-group -lc -lm -lgcc -Wl,--end-group
 
 SRC_C = \
+	k210_aes.c \
 	k210_flash.c \
 	k210_lcd.c \
 	k210_sdcard.c \
@@ -100,6 +101,7 @@ SRC_S = \
 	shared/runtime/gchelper_rv64i.s \
 
 SRC_QSTR += \
+	k210_aes.c \
 	k210_lcd.c \
 	k210_sdcard.c \
 	machine_i2c.c \
@@ -121,6 +123,7 @@ SDK_SRC_C = $(addprefix lib/bsp/, \
 	sleep.c \
 	syscalls.c \
 	) $(addprefix lib/drivers/, \
+	aes.c \
 	clint.c \
 	dmac.c \
 	fpioa.c \
