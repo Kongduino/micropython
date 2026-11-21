@@ -13,6 +13,8 @@ on the bare Kendryte standalone SDK. So far:
   `SoftSPI`, `Signal`, `RTC`, `mem8/16/32`, `reset`, `reset_cause`, `freq`,
   `unique_id` (the flash chip's), `idle`, `lightsleep`, `deepsleep`;
 - `hashlib.sha256` on the K210's hash unit;
+- `_thread`: one thread besides the main one, on the K210's second core,
+  both running at the same time;
 - the screen: `lcd.LCD`, a 480x320 `framebuf` (RGB565) with `show()`, and
   `off()`/`on()` (the backlight too), and the touch screen: `touch.Touch`;
 - `cryptolib`: AES in C (ECB, CBC, CTR), axTLS's implementation, and
@@ -236,4 +238,20 @@ The REPL is on the same port at 115200 baud.
   about 100 ms, mirrored codes too; `corners=True` gives each code's
   corners.
 - Floats are single precision, with the SDK's `lp64f` ABI.
-- The second core is idle, waiting in the SDK's start-up code.
+- `_thread` follows rp2: one thread besides the main one, on core 1 (the
+  main one is on core 0), with no GIL, so the two run at the same time (two
+  counting loops take the time of one). Locks are spinlocks on the A
+  extension's atomics; atomic sections turn interrupts off, and while a
+  thread runs also take a lock between the cores; the GC scans the other
+  core's whole stack. Core 1 is started once (the SDK's `register_core1()`
+  can't be called again, and exits if the function returns) into a loop of
+  its own that waits for a thread, woken by a software interrupt, on the
+  start-up code's 32 KB stack. At a soft reset, a thread still running is
+  dropped: a software interrupt sends core 1 back to its loop, on a fresh
+  stack, after the GC's lock is taken (so it isn't dropped holding it).
+- As on rp2, nothing stops the two cores changing and reading the same
+  object at once: guard shared data with a lock. That includes a module's
+  globals: a dict being resized (a new global) can miss keys for a moment,
+  so a thread looking up `time` while the main script creates a variable
+  can get a NameError. Put the main script's code in a function (which is
+  faster too), and pass the thread what it uses as arguments.

@@ -98,6 +98,7 @@ SRC_C = \
 	modk210.c \
 	modqr.c \
 	mphalport.c \
+	mpthreadport.c \
 	quirc/decode.c \
 	quirc/identify.c \
 	quirc/quirc.c \

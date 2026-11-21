@@ -1,4 +1,11 @@
 #include "py/mpconfig.h"
+
+// Interrupts off, and while core 1 runs a thread a lock between the cores
+uint32_t mp_thread_begin_atomic_section(void);
+void mp_thread_end_atomic_section(uint32_t state);
+#define MICROPY_BEGIN_ATOMIC_SECTION() mp_thread_begin_atomic_section()
+#define MICROPY_END_ATOMIC_SECTION(state) mp_thread_end_atomic_section(state)
+
 #include "py/obj.h"
 #include "shared/runtime/interrupt_char.h"
 

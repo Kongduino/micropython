@@ -26,6 +26,7 @@ int main(void) {
     sysctl_set_power_mode(SYSCTL_POWER_BANK7, SYSCTL_POWER_V18);
     mp_hal_init();
     k210_reset_cause_init();
+    mp_thread_init();
 
 soft_reset:
     mp_stack_ctrl_init();
@@ -66,6 +67,7 @@ soft_reset_exit:
     machine_timer_deinit_all();
     machine_pwm_deinit_all();
     machine_i2s_deinit_all();
+    mp_thread_deinit();
     k210_camera_deinit();
     gc_sweep_all();
     mp_deinit();
@@ -75,6 +77,9 @@ soft_reset_exit:
 void gc_collect(void) {
     gc_collect_start();
     gc_helper_collect_regs_and_stack();
+    #if MICROPY_PY_THREAD
+    mp_thread_gc_others();
+    #endif
     gc_collect_end();
 }
 
