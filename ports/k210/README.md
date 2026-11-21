@@ -12,7 +12,8 @@ on the bare Kendryte standalone SDK. So far:
 - `machine`: `Pin`, `I2C`, `SPI`, `UART`, `SoftI2C`, `SoftSPI`, `Signal`,
   `RTC`, `mem8/16/32`, `reset`, `freq`, `unique_id` (the flash chip's),
   `idle`, `lightsleep`/`deepsleep` (a wait, and a wait then a reset, for now);
-- the screen: `lcd.LCD`, a 480x320 `framebuf` (RGB565) with `show()`;
+- the screen: `lcd.LCD`, a 480x320 `framebuf` (RGB565) with `show()`, and
+  the touch screen: `touch.Touch`;
 - `k210.Flash`, the file system's block device, and `k210.LCD`, the panel.
 
 ## Pins and buses
@@ -36,15 +37,22 @@ The screen:
     lcd.text("Hello", 10, 10, LCD.color(255, 255, 0))
     lcd.show()             # returns while the DMA sends the frame (about 20 ms)
 
+The touch screen (FT6X36 on `I2C(0)`), in the screen's coordinates:
+
+    from touch import Touch
+    touch = Touch()        # the same rotation as the LCD's
+    touch.read()           # (x, y), or None when nothing touches
+
 The SD card, with micropython-lib's `sdcard.py` in `/lib`:
 
     import vfs, sdcard
     from machine import SPI, Pin
     vfs.mount(vfs.VfsFat(sdcard.SDCard(SPI(1), Pin(26), baudrate=20000000)), "/sd")
 
-Other pins of the board (from MaixPy's configuration): LEDs on 14, 15, 17
-(red, green, blue) and 32 (white), the BACK key on 31, NEXT on 20, ENTER on 23
-(also Grove port 3's SDA and SCL).
+Other pins of the board (from Maixduino's Amigo variant): LEDs on 14, 15, 17
+(red, green, blue), the white flash LED on 32, the keys on 20 and 23 (also
+Grove port 3's SDA and SCL), the touch controller's interrupt on 33. MaixPy's
+configuration names a BACK key on 31, but on this board IO31 isn't one.
 
 ## Building
 
