@@ -44,6 +44,12 @@ INC += $(SDK_INC)
 
 CFLAGS += $(SDK_DEFS)
 
+# cryptolib's AES is axTLS's aes.c, built on its own (extmod.mk builds axTLS
+# only for the ssl module, which this port leaves out)
+CFLAGS += -DMICROPY_SSL_AXTLS=1 -Iaxtls-include -I$(TOP)/lib/axtls/ssl -I$(TOP)/lib/axtls/crypto -I$(TOP)/extmod/axtls-include
+GIT_SUBMODULES += lib/axtls
+$(BUILD)/lib/axtls/%.o: CFLAGS += -Wno-all -Wno-unused-parameter -Wno-sign-compare
+
 CFLAGS += $(INC) $(ARCH_FLAGS) -Wall -Werror -std=gnu11 -nostdlib $(COPT)
 CFLAGS += -fno-common -ffunction-sections -fdata-sections -fstrict-volatile-bitfields
 CFLAGS += -fsingle-precision-constant -Wdouble-promotion
@@ -82,6 +88,7 @@ SRC_C = \
 	modk210.c \
 	mphalport.c \
 	shared/timeutils/timeutils.c \
+	lib/axtls/crypto/aes.c \
 	shared/readline/readline.c \
 	shared/runtime/gchelper_native.c \
 	shared/runtime/interrupt_char.c \

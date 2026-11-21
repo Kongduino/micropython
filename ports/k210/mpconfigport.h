@@ -28,6 +28,11 @@
 #define MICROPY_PY_TIME_TIME_TIME_NS      (1)
 #define MICROPY_PY_TIME_INCLUDEFILE       "ports/k210/modtime.c"
 
+// AES in C (ECB, CBC, CTR), with axTLS's implementation
+#define MICROPY_PY_CRYPTOLIB              (1)
+#define MICROPY_PY_CRYPTOLIB_CONSTS       (1)
+#define MICROPY_PY_CRYPTOLIB_CTR          (1)
+
 #define MICROPY_PY_MACHINE                (1)
 #define MICROPY_PY_MACHINE_INCLUDEFILE    "ports/k210/modmachine.c"
 #define MICROPY_PY_MACHINE_RESET          (1)

@@ -14,6 +14,7 @@ on the bare Kendryte standalone SDK. So far:
   `idle`, `lightsleep`/`deepsleep` (a wait, and a wait then a reset, for now);
 - the screen: `lcd.LCD`, a 480x320 `framebuf` (RGB565) with `show()`, and
   the touch screen: `touch.Touch`;
+- `cryptolib`: AES in C (ECB, CBC, CTR), axTLS's implementation;
 - the SD card: `k210.SDCard`, mounted at `/sd` at start-up when a card with a
   FAT file system is in the slot;
 - the onboard chips: `axp173.AXP173` (battery, USB power, charging) and
@@ -125,5 +126,8 @@ The REPL is on the same port at 115200 baud.
   order the bus sends them, and the DMA sends it. SPI0 and DMA channel 5 are
   the screen's.
 - IO36-IO47 are set to 1.8 V at start-up, as Maixduino and MaixPy do.
+- `cryptolib` takes only axTLS's `aes.c` (extmod.mk builds axTLS for the
+  `ssl` module, which isn't here); `axtls-include/arpa/inet.h` gives it the
+  byte-order functions a bare-metal toolchain lacks.
 - Floats are single precision, with the SDK's `lp64f` ABI.
 - The second core is idle, waiting in the SDK's start-up code.
