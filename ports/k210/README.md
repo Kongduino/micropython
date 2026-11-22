@@ -26,6 +26,10 @@ on the bare Kendryte standalone SDK. So far:
   or greyscale (`grey()`), upright with the Amigo held upright: the rear one
   (OV7740), 240x320, or the front one (GC0328), 320x240, with
   `Camera(front=True)`;
+- Protocol Buffers: `protobuf`, with Meshtastic's messages (v2.8.2) in
+  `meshtastic.protobuf` (`mesh_pb2`, `telemetry_pb2`, `config_pb2`...), as in
+  the official Python package, frozen;
+- `.mpy` files (compiled with this repository's `mpy-cross`) can be imported;
 - QR codes: `qr.decode(buf, width, height)`, the codes in a greyscale
   picture, and `Camera.qr()`, those the camera sees;
 - audio: `es8374.ES8374`, the codec (speaker and microphone), and `wav`,
@@ -237,6 +241,27 @@ The REPL is on the same port at 115200 baud.
   SDK's heap, kept between calls. It reads a code in a 240x240 picture in
   about 100 ms, mirrored codes too; `corners=True` gives each code's
   corners.
+- `protobuf` is pure Python: the runtime (`modules/protobuf.py`) for the
+  modules `tools/gen_mp_protobuf.py` generates from `protoc`'s descriptor
+  set, one `*_pb2.py` per `.proto` file, with the part of Google's Python API
+  most code uses: fields as attributes (`getattr(p, "from")` for keywords),
+  `SerializeToString`, `FromString`/`ParseFromString`, `HasField`,
+  `WhichOneof`, `ClearField`, `CopyFrom`, repeated fields with `add()`, enums
+  with `Name()`/`Value()`. Messages serialize as Google's do (fields in
+  number order, proto3 defaults left out unless the field has presence,
+  repeated numbers packed, proto2 files followed as proto2), so the bytes
+  are the same; unknown fields are skipped when parsing; `MessageToDict` and
+  JSON aren't there. To regenerate Meshtastic's (on the host):
+
+      protoc -I<protobufs> --include_imports --descriptor_set_out=meshtastic.desc <protobufs>/meshtastic/*.proto
+      python3 tools/gen_mp_protobuf.py meshtastic.desc modules --only meshtastic/ --map meshtastic/=meshtastic/protobuf/
+
+  `tools/test_protobuf.py` checks the result against `google.protobuf` with
+  random messages: 7480 of all 187 of Meshtastic's message types, all the
+  same bytes. On the Amigo, a 99-byte text `MeshPacket` decodes in 0.64 ms
+  and encodes in 0.53 ms, a 158-byte `NodeInfo` in 1.3 and 1.0 ms. Frozen,
+  importing `mesh_pb2`, `telemetry_pb2`, `config_pb2` and `admin_pb2` takes
+  45 ms and 105 KB of RAM (from `.mpy` files, 0.5 s and 295 KB).
 - Floats are single precision, with the SDK's `lp64f` ABI.
 - `_thread` follows rp2: one thread besides the main one, on core 1 (the
   main one is on core 0), with no GIL, so the two run at the same time (two

@@ -16,6 +16,7 @@
 #define MICROPY_FLOAT_IMPL                (MICROPY_FLOAT_IMPL_FLOAT)
 #define MICROPY_ALLOC_PATH_MAX            (256)
 #define MICROPY_STACK_CHECK               (1)
+#define MICROPY_PERSISTENT_CODE_LOAD      (1)
 #define MICROPY_PY_THREAD                 (1)
 #define MICROPY_PY_THREAD_GIL             (0)
 #define MICROPY_THREAD_YIELD()            mp_handle_pending(MP_HANDLE_PENDING_CALLBACKS_AND_EXCEPTIONS)
